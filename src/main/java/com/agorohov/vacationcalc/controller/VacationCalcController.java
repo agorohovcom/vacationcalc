@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @RestController
@@ -39,7 +38,6 @@ public class VacationCalcController {
             return ResponseEntity.badRequest().body(msg);
         }
 
-        BigDecimal vacationPay = vacationCalcService.calculate(avgSalary, vacationDays, startDate);
-        return ResponseEntity.ok(vacationPay.toString());
+        return ResponseEntity.ok(vacationCalcService.calculate(avgSalary, vacationDays, startDate).toString());
     }
 }

@@ -16,8 +16,13 @@ import java.util.Set;
 public class VacationCalcService {
     Logger log = LoggerFactory.getLogger(VacationCalcService.class);
 
-    @Value("${vacation-calc.avg-days-per-month}")
-    private double averageDaysPerMonth;
+    // среднее кол-во дней в месяце для упрощённого расчёта отпускных
+    @Value("${vacation-calc.avg-days-per-month-easy}")
+    private double avgDaysPerMonthEasy;
+
+    // среднее кол-во дней в месяце без упрощённого учёта выходных
+    @Value("${vacation-calc.avg-days-per-month-total}")
+    private double avgDaysPerMonthTotal;
 
     private final Set<MonthDay> holidays;
 
@@ -28,20 +33,31 @@ public class VacationCalcService {
     public BigDecimal calculate(double averageSalary, int vacationDays, LocalDate startDate) {
         log.info("Method calculate called with parameters: {}, {}, {}", averageSalary, vacationDays, startDate);
 
+        double currentAvgDaysPerMonth;
+
+        // если в запросе передана дата начала отпуска, берём упрощённое количество дней в месяце,
+        // иначе берем среднее количество дней в месяце и высчитываем выходные и праздники
+        if (startDate == null) {
+            currentAvgDaysPerMonth = avgDaysPerMonthEasy;
+        } else {
+            currentAvgDaysPerMonth = avgDaysPerMonthTotal;
+            vacationDays = paidVacationDays(vacationDays, startDate);
+        }
+
+        // средняя дневная зарплата
         BigDecimal averageDaySalary = BigDecimal.valueOf(averageSalary).divide(
-                BigDecimal.valueOf(averageDaysPerMonth),
+                BigDecimal.valueOf(currentAvgDaysPerMonth),
                 2,
                 RoundingMode.HALF_UP);
 
-        if (startDate != null) {
-            vacationDays = paidVacationDays(vacationDays, startDate);
-        }
+        // отпускные
         BigDecimal vacationPay = averageDaySalary.multiply(BigDecimal.valueOf(vacationDays));
 
         log.info("Method calculate completed with result: {}, paid days: {}", vacationPay, vacationDays);
         return vacationPay;
     }
 
+    // количество оплачиваемых дней отпуска (без выходных)
     private int paidVacationDays(int vacationDays, LocalDate startDate) {
         int paidVacationDays = 0;
         LocalDate currentDay = startDate;
