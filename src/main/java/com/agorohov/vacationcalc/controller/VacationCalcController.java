@@ -1,15 +1,16 @@
 package com.agorohov.vacationcalc.controller;
 
-import com.agorohov.vacationcalc.dto.VacationRequest;
 import com.agorohov.vacationcalc.service.VacationCalcService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @RestController
 public class VacationCalcController {
@@ -23,16 +24,22 @@ public class VacationCalcController {
     }
 
     @GetMapping("calculate")
-    public ResponseEntity<String> calculate(@RequestBody VacationRequest request) {
-        if (request.getAverageSalary() <= 0 || request.getVacationDays() <= 0) {
-            String msg = "Invalid request data: " + request;
-            log.error(msg);
+    public ResponseEntity<String> calculate(
+            @RequestParam("avg_salary") double avgSalary,
+            @RequestParam("vacation_days") int vacationDays,
+            @RequestParam(name = "start_date", required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate startDate) {
+        if (avgSalary <= 0.0) {
+            String msg = "Salary must be greater than 0";
+            log.warn(msg);
             return ResponseEntity.badRequest().body(msg);
         }
-        BigDecimal averageSalary = BigDecimal.valueOf(request.getAverageSalary());
-        int vacationDays = request.getVacationDays();
+        if (vacationDays <= 0) {
+            String msg = "Date must be greater than 0";
+            log.warn(msg);
+            return ResponseEntity.badRequest().body(msg);
+        }
 
-        BigDecimal vacationPay = vacationCalcService.calculate(averageSalary, vacationDays);
+        BigDecimal vacationPay = vacationCalcService.calculate(avgSalary, vacationDays, startDate);
         return ResponseEntity.ok(vacationPay.toString());
     }
 }
