@@ -38,7 +38,7 @@ public class VacationCalcService {
         }
         BigDecimal vacationPay = averageDaySalary.multiply(BigDecimal.valueOf(vacationDays));
 
-        log.info("Method calculate completed with result: {}", vacationPay);
+        log.info("Method calculate completed with result: {}, paid days: {}", vacationPay, vacationDays);
         return vacationPay;
     }
 
@@ -54,7 +54,6 @@ public class VacationCalcService {
             }
             currentDay = currentDay.plusDays(1);
         }
-        System.out.println(paidVacationDays);
         return paidVacationDays;
     }
 }
