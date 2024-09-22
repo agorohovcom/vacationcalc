@@ -26,26 +26,27 @@ public class VacationCalcService {
         this.holidays = holidays;
     }
 
-    public BigDecimal calculate(double averageSalary, int vacationDays, LocalDate startDate) {
+    public BigDecimal calculate(double avgMonthSalary, int vacationDays, LocalDate startDate) {
         log.info("Method calculate called with parameters: averageSalary={}, vacationDays={}, startDate={}",
-                averageSalary, vacationDays, startDate);
+                avgMonthSalary, vacationDays, startDate);
 
-        double currentAvgDaysPerMonth;
+        double avgDaysPerMonth;
 
-        // если в запросе передана дата начала отпуска, берём упрощённое количество дней в месяце,
+        // если в запросе не передана дата начала отпуска, берём упрощённое количество дней в месяце,
         // иначе считаем рабочие дни за прошлый год и за период отпуска
         if (startDate == null) {
-            currentAvgDaysPerMonth = avgDaysPerMonthEasy;
+            avgDaysPerMonth = avgDaysPerMonthEasy;
         } else {
-            currentAvgDaysPerMonth = getWorkDaysForLastYear(startDate) / 12.0;
+            avgDaysPerMonth = getWorkDaysForLastYear(startDate) / 12.0;
             vacationDays = getPaidVacationDays(vacationDays, startDate);
         }
 
         // средняя дневная зарплата
-        BigDecimal averageDaySalary = BigDecimal.valueOf(averageSalary).divide(
-                BigDecimal.valueOf(currentAvgDaysPerMonth),
+        BigDecimal averageDaySalary = BigDecimal.valueOf(avgMonthSalary).divide(
+                BigDecimal.valueOf(avgDaysPerMonth),
                 2,
-                RoundingMode.HALF_UP);
+                RoundingMode.HALF_UP
+        );
 
         // отпускные
         BigDecimal vacationPay = averageDaySalary.multiply(BigDecimal.valueOf(vacationDays));
@@ -80,9 +81,11 @@ public class VacationCalcService {
             }
             currentDay = currentDay.plusDays(1);
         }
+
         return paidVacationDays;
     }
 
+    // рабочий день или нет
     private boolean isWorkDay(LocalDate day) {
         return !day.getDayOfWeek().equals(DayOfWeek.SATURDAY)
                 && !day.getDayOfWeek().equals(DayOfWeek.SUNDAY)

@@ -13,7 +13,6 @@ import java.time.LocalDate;
 
 @RestController
 public class VacationCalcController {
-
     Logger log = LoggerFactory.getLogger(VacationCalcController.class);
 
     private final VacationCalcService vacationCalcService;
