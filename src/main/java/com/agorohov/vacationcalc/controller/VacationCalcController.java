@@ -27,13 +27,13 @@ public class VacationCalcController {
             @RequestParam("avg_salary") double avgSalary,
             @RequestParam("vacation_days") int vacationDays,
             @RequestParam(name = "start_date", required = false) @DateTimeFormat(pattern = "dd-MM-yyyy") LocalDate startDate) {
-        if (avgSalary <= 0.0) {
-            String msg = "Salary must be greater than 0";
+        if (avgSalary < 0.0) {
+            String msg = "Average salary can't be negative";
             log.warn(msg);
             return ResponseEntity.badRequest().body(msg);
         }
-        if (vacationDays <= 0) {
-            String msg = "Date must be greater than 0";
+        if (vacationDays < 1) {
+            String msg = "Vacation days can't be less than 1";
             log.warn(msg);
             return ResponseEntity.badRequest().body(msg);
         }

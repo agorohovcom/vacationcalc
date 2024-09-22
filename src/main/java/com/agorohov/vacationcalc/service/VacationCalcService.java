@@ -17,12 +17,8 @@ public class VacationCalcService {
     Logger log = LoggerFactory.getLogger(VacationCalcService.class);
 
     // среднее кол-во дней в месяце для упрощённого расчёта отпускных
-    @Value("${vacation-calc.avg-days-per-month-easy}")
+    @Value("${vacation-calc.avg-days-per-month}")
     private double avgDaysPerMonthEasy;
-
-    // среднее кол-во дней в месяце без упрощённого учёта выходных
-    @Value("${vacation-calc.avg-days-per-month-total}")
-    private double avgDaysPerMonthTotal;
 
     private final Set<MonthDay> holidays;
 
@@ -31,17 +27,19 @@ public class VacationCalcService {
     }
 
     public BigDecimal calculate(double averageSalary, int vacationDays, LocalDate startDate) {
-        log.info("Method calculate called with parameters: {}, {}, {}", averageSalary, vacationDays, startDate);
+        log.info("Method calculate called with parameters: averageSalary={}, vacationDays={}, startDate={}",
+                averageSalary, vacationDays, startDate);
 
         double currentAvgDaysPerMonth;
 
         // если в запросе передана дата начала отпуска, берём упрощённое количество дней в месяце,
-        // иначе берем среднее количество дней в месяце и высчитываем выходные и праздники
+        // иначе считаем рабочие дни за прошлый год и за период отпуска
         if (startDate == null) {
             currentAvgDaysPerMonth = avgDaysPerMonthEasy;
         } else {
-            currentAvgDaysPerMonth = avgDaysPerMonthTotal;
-            vacationDays = paidVacationDays(vacationDays, startDate);
+            currentAvgDaysPerMonth = getWorkDaysForLastYear(startDate) / 12.0;
+            System.out.println(currentAvgDaysPerMonth);
+            vacationDays = getPaidVacationDays(vacationDays, startDate);
         }
 
         // средняя дневная зарплата
@@ -53,23 +51,42 @@ public class VacationCalcService {
         // отпускные
         BigDecimal vacationPay = averageDaySalary.multiply(BigDecimal.valueOf(vacationDays));
 
-        log.info("Method calculate completed with result: {}, paid days: {}", vacationPay, vacationDays);
+        log.info("Method calculate completed with result: vacationPay={}, paid days: {}", vacationPay, vacationDays);
         return vacationPay;
     }
 
-    // количество оплачиваемых дней отпуска (без выходных)
-    private int paidVacationDays(int vacationDays, LocalDate startDate) {
+    // количество рабочих дней за год до начала отпуска
+    private int getWorkDaysForLastYear(LocalDate startVacationDate) {
+        LocalDate currentDayOfLastYear = startVacationDate.minusYears(1);
+        int workingDays = 0;
+
+        while (currentDayOfLastYear.isBefore(startVacationDate)) {
+            if (isWorkDay(currentDayOfLastYear)) {
+                workingDays++;
+            }
+            currentDayOfLastYear = currentDayOfLastYear.plusDays(1);
+        }
+
+        return workingDays;
+    }
+
+    // количество оплачиваемых дней отпуска
+    private int getPaidVacationDays(int vacationDays, LocalDate startDate) {
         int paidVacationDays = 0;
         LocalDate currentDay = startDate;
 
         for (int i = 0; i < vacationDays; i++) {
-            if (!currentDay.getDayOfWeek().equals(DayOfWeek.SATURDAY)
-                    && !currentDay.getDayOfWeek().equals(DayOfWeek.SUNDAY)
-                    && !holidays.contains(MonthDay.from(currentDay))) {
+            if (isWorkDay(currentDay)) {
                 paidVacationDays++;
             }
             currentDay = currentDay.plusDays(1);
         }
         return paidVacationDays;
+    }
+
+    private boolean isWorkDay(LocalDate day) {
+        return !day.getDayOfWeek().equals(DayOfWeek.SATURDAY)
+                && !day.getDayOfWeek().equals(DayOfWeek.SUNDAY)
+                && !holidays.contains(MonthDay.from(day));
     }
 }
