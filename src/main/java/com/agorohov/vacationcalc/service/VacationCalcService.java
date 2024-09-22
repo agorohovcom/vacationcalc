@@ -38,7 +38,6 @@ public class VacationCalcService {
             currentAvgDaysPerMonth = avgDaysPerMonthEasy;
         } else {
             currentAvgDaysPerMonth = getWorkDaysForLastYear(startDate) / 12.0;
-            System.out.println(currentAvgDaysPerMonth);
             vacationDays = getPaidVacationDays(vacationDays, startDate);
         }
 
