@@ -33,7 +33,7 @@ public class VacationCalcService {
         double avgDaysPerMonth;
 
         // если в запросе не передана дата начала отпуска, берём упрощённое количество дней в месяце,
-        // иначе считаем рабочие дни за прошлый год и за период отпуска
+        // иначе считаем рабочие дни за прошлый год и за период отпуска без праздников и выходных
         if (startDate == null) {
             avgDaysPerMonth = avgDaysPerMonthEasy;
         } else {
@@ -41,15 +41,9 @@ public class VacationCalcService {
             vacationDays = getPaidVacationDays(vacationDays, startDate);
         }
 
-        // средняя дневная зарплата
-        BigDecimal averageDaySalary = BigDecimal.valueOf(avgMonthSalary).divide(
-                BigDecimal.valueOf(avgDaysPerMonth),
-                2,
-                RoundingMode.HALF_UP
-        );
-
         // отпускные
-        BigDecimal vacationPay = averageDaySalary.multiply(BigDecimal.valueOf(vacationDays));
+        BigDecimal vacationPay = BigDecimal.valueOf(avgMonthSalary / avgDaysPerMonth * vacationDays)
+                .setScale(2, RoundingMode.HALF_UP);
 
         log.info("Method calculate completed with result: vacationPay={}, paid days: {}", vacationPay, vacationDays);
         return vacationPay;
